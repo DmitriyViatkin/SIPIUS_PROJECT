@@ -8,8 +8,9 @@ class Phone(models.Model):
     color = models.CharField(max_length=100, null=True )
     memory_size = models.CharField(max_length=100, null=True )
     manufacturer = models.CharField(max_length=100, null=True )
-    price = models.CharField(max_length=100, null=True )
-    discounted_price = models.CharField(max_length=100, null=True )
+    price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    discounted_price = models.DecimalField(max_digits=12, decimal_places=2, null=True,
+                                           blank=True)
     product_code = models.CharField(max_length=100, null=True )
     reviews_count = models.IntegerField(null=True )
     screen_diagonal = models.CharField(max_length=50, null=True )
@@ -20,7 +21,7 @@ class Phone(models.Model):
     specifications = models.JSONField(default=dict, null=True, blank=True )
 
     # Service fields
-    link = models.URLField(max_length=500, null=True,  )
+    link = models.URLField(max_length=500, null=True, unique=True )
     status = models.CharField(max_length=50, default="New", null=True)
 
     def __str__(self):
