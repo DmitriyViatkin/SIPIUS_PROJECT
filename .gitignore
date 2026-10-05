@@ -168,3 +168,6 @@ cython_debug/
 pgdata/
 postgres_data/
 *.csv
+*.csv
+!result/*.csv
+!result/**/*.csv
