@@ -167,8 +167,3 @@ cython_debug/
 .DS_Store
 pgdata/
 postgres_data/
-
-*.csv
-!results/
-!result/*.csv
-!result/**/*.csv
