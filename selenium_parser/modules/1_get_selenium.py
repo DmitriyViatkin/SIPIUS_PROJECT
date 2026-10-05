@@ -1,4 +1,4 @@
-from modules.load_django import *
+from selenium_parser.modules.load_django import *
 from time import sleep
 import re
 from pprint import pprint
@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 from get_spec_selenium import get_spec
-from parser_app.models import Phone
+from parser_app.models import Phone_sel
 
 URL = "https://brain.com.ua/ukr"
 SEARCH_QUERY = "Apple iPhone 15 128GB Black"
@@ -124,7 +124,7 @@ def get_data_from_the_page(driver, link):
 
 def save_data(product):
     link = product.pop('link')
-    Phone.objects.update_or_create(link=link, defaults=product)
+    Phone_sel.objects.update_or_create(link=link, defaults=product)
 
 
 def get_data(driver):
@@ -139,7 +139,7 @@ def get_data(driver):
         product = get_data_from_the_page(driver, link)
     except Exception as e:
         print(f'Failed: {e}')
-        Phone.objects.update_or_create(link=link, defaults={'status': 'Failed'})
+        Phone_sel.objects.update_or_create(link=link, defaults={'status': 'Failed'})
         return
 
     save_data(product)
