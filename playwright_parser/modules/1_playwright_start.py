@@ -1,4 +1,4 @@
-from modules.load_django import *
+from playwright_parser.modules.load_django import *
 import asyncio
 from decimal import Decimal
 import re
@@ -152,43 +152,57 @@ async def main():
                 product["display_resolution"] = None
 
             try:
-                price_locator = page.locator(
-                    "xpath=//div[@class='br-pr-np' and @data-pid='1044347']//div[@class='price-wrapper']//span")
-                if await price_locator.is_visible(timeout=1000):
-                    raw_price = await price_locator.text_content()
+                main_price_block = page.locator("div.main-price-block").first
 
-                    if raw_price:
-                        clean_price = re.sub(r"[^\d.,]", "", raw_price).replace(",", ".")
+                # Локатор старой цены (бывает только при скидке в блоке br-pr-op)
+                old_price_loc = main_price_block.locator(
+                    "div.br-pr-op div.price-wrapper span").first
 
-                        if clean_price:
-                            product["price"] = Decimal(clean_price)
-                        else:
-                            product["price"] = None
-                    else:
-                        product["price"] = None
+                # Локатор скидочной цены (с красным выделением)
+                red_price_loc = main_price_block.locator(
+                    "div.br-pr-np span.red-price").first
+
+                parsed_old_price = None
+                parsed_red_price = None
+
+                # Парсим старую цену
+                if await old_price_loc.is_visible(timeout=1000):
+                    raw = await old_price_loc.text_content()
+                    if raw:
+                        clean = re.sub(r"[^\d.,]", "", raw).replace(",", ".")
+                        if clean:
+                            parsed_old_price = Decimal(clean)
+
+                # Парсим красную/скидочную цену
+                if await red_price_loc.is_visible(timeout=1000):
+                    raw = await red_price_loc.text_content()
+                    if raw:
+                        clean = re.sub(r"[^\d.,]", "", raw).replace(",", ".")
+                        if clean:
+                            parsed_red_price = Decimal(clean)
+
+                # Записываем результат в словарь
+                if parsed_old_price and parsed_red_price:
+                    # Товар со скидкой
+                    product["price"] = parsed_old_price
+                    product["discounted_price"] = parsed_red_price
                 else:
-                    product["price"] = None
-            except AttributeError:
-                product["price"] = None
+                    # Товар без скидки (берем обычную цену из br-pr-np)
+                    reg_price_loc = main_price_block.locator(
+                        "div.br-pr-np div.price-wrapper span").first
+                    parsed_reg_price = None
+                    if await reg_price_loc.is_visible(timeout=1000):
+                        raw = await reg_price_loc.text_content()
+                        if raw:
+                            clean = re.sub(r"[^\d.,]", "", raw).replace(",", ".")
+                            if clean:
+                                parsed_reg_price = Decimal(clean)
 
-            try:
-                d_price_locator = page.locator(
-                    "xpath=//span[contains(@class, 'red-price')]").first
-                if await d_price_locator.is_visible(timeout=1000):
-                    raw_price = await d_price_locator.text_content()
-
-                    if raw_price:
-                        clean_price = re.sub(r"[^\d.,]", "", raw_price).replace(",", ".")
-
-                        if clean_price:
-                            product["discounted_price"] = Decimal(clean_price)
-                        else:
-                            product["discounted_price"] = None
-                    else:
-                        product["discounted_price"] = None
-                else:
+                    product["price"] = parsed_reg_price
                     product["discounted_price"] = None
-            except AttributeError:
+
+            except Exception:
+                product["price"] = None
                 product["discounted_price"] = None
 
             try:
